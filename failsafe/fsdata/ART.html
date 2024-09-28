@@ -1,21 +1,24 @@
-<!DOCTYPE HTML>
+<!DOCTYPE HTML> 
 <html>
 	<head>
 		<meta charset="utf-8">
-		<title>ART update</title>
+		<title>MediaTek Calibration Data Update</title>
 		<link rel="stylesheet" href="style.css">
 	</head>
 	<body>
 		<div id="m">
-			<h1>ART UPDATE</h1>
-			<p>You are going to update <strong>ART (Atheros Radio Test)</strong> on the device.<br>Please, choose file from your local hard drive and click <strong>Update ART</strong> button.</p>
-			<form method="post" enctype="multipart/form-data"><input type="file" name="art"><input type="submit" value="Update ART"></form>
+			<h1>Calibration Data Update</h1>
+			<p>You are going to update <strong>Calibration Data</strong> on the device.<br>Please, choose the file from your local hard drive and click <strong>Update Calibration Data</strong> button.</p>
+			<form method="post" enctype="multipart/form-data">
+				<input type="file" name="calibration_data" required>
+				<input type="submit" value="Update Calibration Data">
+			</form>
 			<div class="i w">
 				<strong>WARNINGS</strong>
 				<ul>
-					<li>do not power off the device during update</li>
-					<li>if everything goes well, the device will restart</li>
-					<li>you can upload whatever you want, so be sure that you choose proper ART image for your device</li>
+					<li>Do not power off the device during the update.</li>
+					<li>If everything goes well, the device will restart automatically.</li>
+					<li>Make sure you upload the correct Calibration Data image for your MediaTek device.</li>
 				</ul>
 			</div>
 		</div>
