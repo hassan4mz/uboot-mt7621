@@ -32,6 +32,7 @@ enum file_type {
 	TYPE_BL,
 	TYPE_BL_ADV,
 	TYPE_FW
+	TYPE_FY
 };
 
 static void cli_highlight_input(const char *prompt)
@@ -803,6 +804,12 @@ static int write_data(enum file_type ft, size_t addr, uint32_t data_size)
 			return CMD_RET_FAILURE;
 
 		break;
+	case TYPE_FY:
+		if (write_factory(flash, addr, data_size))
+			return CMD_RET_FAILURE;
+
+		break;
+
 
 	default:
 		return CMD_RET_FAILURE;
@@ -826,6 +833,10 @@ struct upgrade_part {
 	{
 		.id = "fw",
 		.name = "Firmware"
+	},
+	{
+		.id = "fy",
+		.name = "factory"
 	},
 };
 
