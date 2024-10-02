@@ -20,7 +20,7 @@ struct mtk_bootmenu_entry {
 		.cmd = "mtkupgrade fw"
 	}, {
 		.desc = "Upgrade factory",
-		.cmd = "mtkupgrade fw"
+		.cmd = "mtkupgrade fy"
 	}, {
 		.desc = "Upgrade bootloader",
 		.cmd = "mtkupgrade bl"
