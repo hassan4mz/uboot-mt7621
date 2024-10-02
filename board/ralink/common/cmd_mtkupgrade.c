@@ -921,6 +921,10 @@ static int do_mtkupgrade(cmd_tbl_t *cmdtp, int flag, int argc,
 		ft = TYPE_FW;
 		ft_name = "Firmware";
 		env_name = "bootfile.firmware";
+	} else if (!strcasecmp(part, "fy")) {
+		ft = TYPE_FY;
+		ft_name = "factory";
+		env_name = "bootfile.factory";
 	} else {
 		printf("Error: invalid type '%s'\n", part);
 		return EINVAL;
@@ -933,6 +937,8 @@ static int do_mtkupgrade(cmd_tbl_t *cmdtp, int flag, int argc,
 		run = confirm_yes("Reboot after upgrading? (Y/n):");
 	else if (ft == TYPE_FW)
 		run = confirm_yes("Run firmware after upgrading? (Y/n):");
+	else if (ft == TYPE_FY)
+		run = confirm_yes("Run factory after upgrading? (Y/n):");
 
 	data_load_addr = CONFIG_SYS_LOAD_ADDR;
 
@@ -954,6 +960,8 @@ static int do_mtkupgrade(cmd_tbl_t *cmdtp, int flag, int argc,
 			printf("Rebooting ...\n\n");
 			_machine_restart();
 		} else if (ft == TYPE_FW) {
+			run_command("mtkboardboot", 0);
+		} else if (ft == TYPE_FY) {
 			run_command("mtkboardboot", 0);
 		}
 	}
