@@ -31,7 +31,7 @@
 enum file_type {
 	TYPE_BL,
 	TYPE_BL_ADV,
-	TYPE_FW
+	TYPE_FW,
 	TYPE_FY
 };
 
