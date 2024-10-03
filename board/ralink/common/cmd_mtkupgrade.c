@@ -826,34 +826,6 @@ static int _write_factory(void *flash, size_t data_addr, uint32_t data_size) {
     return CMD_RET_SUCCESS;
 }
 
-static int write_data(enum file_type ft, size_t addr, uint32_t data_size) {
-    void *flash;
-
-    flash = mtk_board_get_flash_dev();
-
-    if (!flash)
-        return CMD_RET_FAILURE;
-
-    switch (ft) {
-    case TYPE_BL:
-    case TYPE_BL_ADV:
-        if (write_bootloader(flash, addr, data_size, (ft == TYPE_BL_ADV)))
-            return CMD_RET_FAILURE;
-        break;
-    case TYPE_FW:
-        if (write_firmware(flash, addr, data_size))
-            return CMD_RET_FAILURE;
-        break;
-    case TYPE_FACTORY: // New case for factory partition
-        if (_write_factory(flash, addr, data_size))
-            return CMD_RET_FAILURE;
-        break;
-    default:
-        return CMD_RET_FAILURE;
-    }
-
-    return CMD_RET_SUCCESS;
-}
 
 
 static int write_data(enum file_type ft, size_t addr, uint32_t data_size)
