@@ -1014,6 +1014,7 @@ U_BOOT_CMD(mtkupgrade, 2, 0, do_mtkupgrade,
 	"          bl      - Bootloader\n"
 	"          bladv   - Bootloader (Advanced)\n"
 	"          fw      - Firmware\n"
+	"          factory      - factory\n"
 );
 
 static int run_image(size_t data_addr, uint32_t data_size)
