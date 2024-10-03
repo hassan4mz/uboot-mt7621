@@ -1,3 +1,6 @@
+
+
+
 // SPDX-License-Identifier:	GPL-2.0+
 /*
  * Copyright (C) 2018 MediaTek Incorporation. All Rights Reserved.
@@ -29,10 +32,10 @@
 #define COLOR_NORMAL	"\x1b[0m"
 
 enum file_type {
-	TYPE_BL,
-	TYPE_BL_ADV,
-	TYPE_FW,
-	TYPE_FY
+    TYPE_BL,
+    TYPE_BL_ADV,
+    TYPE_FW,
+    TYPE_FACTORY // New entry for factory partition
 };
 
 static void cli_highlight_input(const char *prompt)
@@ -781,6 +784,81 @@ static int write_firmware(void *flash, size_t data_addr, uint32_t data_size)
 	return _write_firmware(flash, data_addr, data_size, 0);
 }
 
+static int _write_factory(void *flash, size_t data_addr, uint32_t data_size) {
+    uint64_t part_off, part_size;
+    int ret;
+
+    if (get_mtd_part_info("factory", &part_off, &part_size)) {
+        printf(COLOR_ERROR "*** MTD partition 'factory' does not exist! ***" COLOR_NORMAL "\n");
+        return CMD_RET_FAILURE;
+    }
+
+    if (!part_off) {
+        printf(COLOR_ERROR "*** MTD partition 'factory' is not valid! ***" COLOR_NORMAL "\n");
+        return CMD_RET_FAILURE;
+    }
+
+    if (part_size < data_size) {
+        printf("\n" COLOR_ERROR "*** Error: new factory data is larger than mtd partition 'factory' ***" COLOR_NORMAL "\n");
+        printf(COLOR_ERROR "*** Operation Aborted! ***" COLOR_NORMAL "\n");
+        return CMD_RET_FAILURE;
+    }
+
+    uint32_t erase_size = ALIGN(data_size, mtk_board_get_flash_erase_size(flash));
+
+    printf("Erasing from 0x%llx to 0x%llx, size 0x%x ... ", part_off, part_off + erase_size - 1, erase_size);
+    ret = mtk_board_flash_erase(flash, part_off, erase_size);
+    if (ret) {
+        printf("Fail\n");
+        printf(COLOR_ERROR "*** Flash erasure [%llx-%llx] failed! ***" COLOR_NORMAL "\n", part_off, part_off + erase_size - 1);
+        return CMD_RET_FAILURE;
+    }
+
+    printf("OK\n");
+    printf("Writing from 0x%x to 0x%llx, size 0x%x ... ", data_addr, part_off, data_size);
+    ret = mtk_board_flash_write(flash, part_off, data_size, (void *)data_addr);
+    if (ret) {
+        printf("Fail\n");
+        printf(COLOR_ERROR "*** Flash program [%llx-%llx] failed! ***" COLOR_NORMAL "\n", part_off, part_off + data_size - 1);
+        return CMD_RET_FAILURE;
+    }
+
+    printf("OK\n");
+    printf("\n" COLOR_PROMPT "*** Factory data upgrade completed! ***" COLOR_NORMAL "\n");
+
+    return CMD_RET_SUCCESS;
+}
+
+static int write_data(enum file_type ft, size_t addr, uint32_t data_size) {
+    void *flash;
+
+    flash = mtk_board_get_flash_dev();
+
+    if (!flash)
+        return CMD_RET_FAILURE;
+
+    switch (ft) {
+    case TYPE_BL:
+    case TYPE_BL_ADV:
+        if (write_bootloader(flash, addr, data_size, (ft == TYPE_BL_ADV)))
+            return CMD_RET_FAILURE;
+        break;
+    case TYPE_FW:
+        if (write_firmware(flash, addr, data_size))
+            return CMD_RET_FAILURE;
+        break;
+    case TYPE_FACTORY: // New case for factory partition
+        if (_write_factory(flash, addr, data_size))
+            return CMD_RET_FAILURE;
+        break;
+    default:
+        return CMD_RET_FAILURE;
+    }
+
+    return CMD_RET_SUCCESS;
+}
+
+
 static int write_data(enum file_type ft, size_t addr, uint32_t data_size)
 {
 	void *flash;
@@ -804,12 +882,6 @@ static int write_data(enum file_type ft, size_t addr, uint32_t data_size)
 			return CMD_RET_FAILURE;
 
 		break;
-	case TYPE_FY:
-		if (write_factory(flash, addr, data_size))
-			return CMD_RET_FAILURE;
-
-		break;
-
 
 	default:
 		return CMD_RET_FAILURE;
@@ -819,26 +891,27 @@ static int write_data(enum file_type ft, size_t addr, uint32_t data_size)
 }
 
 struct upgrade_part {
-	const char *id;
-	const char *name;
+    const char *id;
+    const char *name;
 } upgrade_parts[] = {
-	{
-		.id = "bl",
-		.name = "Bootloader"
-	},
-	{
-		.id = "bladv",
-		.name = "Bootloader (Advanced)"
-	},
-	{
-		.id = "fw",
-		.name = "Firmware"
-	},
-	{
-		.id = "fy",
-		.name = "factory"
-	},
+    {
+        .id = "bl",
+        .name = "Bootloader"
+    },
+    {
+        .id = "bladv",
+        .name = "Bootloader (Advanced)"
+    },
+    {
+        .id = "fw",
+        .name = "Firmware"
+    },
+    {
+        .id = "factory",
+        .name = "Factory" // New entry for factory partition
+    },
 };
+
 
 static const char *select_part(void)
 {
@@ -891,83 +964,76 @@ static int confirm_yes(const char *prompt)
 		!strcmp(yn, "yes") || !strcmp(yn, "YES");
 }
 
-static int do_mtkupgrade(cmd_tbl_t *cmdtp, int flag, int argc,
-	char *const argv[])
-{
-	enum file_type ft;
-	const char *part, *ft_name, *env_name;
-	int run = 0;
+static int do_mtkupgrade(cmd_tbl_t *cmdtp, int flag, int argc, char *const argv[]) {
+    enum file_type ft;
+    const char *part, *ft_name, *env_name;
+    int run = 0;
 
-	size_t data_load_addr;
-	uint32_t data_size = 0;
+    size_t data_load_addr;
+    uint32_t data_size = 0;
 
-	if (argc < 2) {
-		part = select_part();
-		if (!part)
-			return CMD_RET_FAILURE;
-	} else {
-		part = argv[1];
-	}
+    if (argc < 2) {
+        part = select_part();
+        if (!part)
+            return CMD_RET_FAILURE;
+    } else {
+        part = argv[1];
+    }
 
-	if (!strcasecmp(part, "bl")) {
-		ft = TYPE_BL;
-		ft_name = "Bootloader";
-		env_name = "bootfile.bootloader";
-	} else if (!strcasecmp(part, "bladv")) {
-		ft = TYPE_BL_ADV;
-		ft_name = "Bootloader";
-		env_name = "bootfile.bootloader";
-	} else if (!strcasecmp(part, "fw")) {
-		ft = TYPE_FW;
-		ft_name = "Firmware";
-		env_name = "bootfile.firmware";
-	} else if (!strcasecmp(part, "fy")) {
-		ft = TYPE_FY;
-		ft_name = "factory";
-		env_name = "bootfile.factory";
-	} else {
-		printf("Error: invalid type '%s'\n", part);
-		return EINVAL;
-	}
+    if (!strcasecmp(part, "bl")) {
+        ft = TYPE_BL;
+        ft_name = "Bootloader";
+        env_name = "bootfile.bootloader";
+    } else if (!strcasecmp(part, "bladv")) {
+        ft = TYPE_BL_ADV;
+        ft_name = "Bootloader";
+        env_name = "bootfile.bootloader";
+    } else if (!strcasecmp(part, "fw")) {
+        ft = TYPE_FW;
+        ft_name = "Firmware";
+        env_name = "bootfile.firmware";
+    } else if (!strcasecmp(part, "factory")) { // New case for factory partition
+        ft = TYPE_FACTORY;
+        ft_name = "Factory";
+        env_name = "bootfile.factory";
+    } else {
+        printf("Error: invalid type '%s'\n", part);
+        return EINVAL;
+    }
 
-	printf("\n" COLOR_PROMPT "*** Upgrading %s ***" COLOR_NORMAL
-	       "\n\n", ft_name);
+    printf("\n" COLOR_PROMPT "*** Upgrading %s ***" COLOR_NORMAL "\n\n", ft_name);
 
-	if (ft == TYPE_BL)
-		run = confirm_yes("Reboot after upgrading? (Y/n):");
-	else if (ft == TYPE_FW)
-		run = confirm_yes("Run firmware after upgrading? (Y/n):");
-	else if (ft == TYPE_FY)
-		run = confirm_yes("Run factory after upgrading? (Y/n):");
+    if (ft == TYPE_BL)
+        run = confirm_yes("Reboot after upgrading? (Y/n):");
+    else if (ft == TYPE_FW)
+        run = confirm_yes("Run firmware after upgrading? (Y/n):");
 
-	data_load_addr = CONFIG_SYS_LOAD_ADDR;
+    data_load_addr = CONFIG_SYS_LOAD_ADDR;
 
-	/* Load data */
-	if (load_data(data_load_addr, &data_size, env_name) != CMD_RET_SUCCESS)
-		return CMD_RET_FAILURE;
+    /* Load data */
+    if (load_data(data_load_addr, &data_size, env_name) != CMD_RET_SUCCESS)
+        return CMD_RET_FAILURE;
 
-	printf("\n" COLOR_PROMPT "*** Loaded %d (0x%x) bytes at 0x%08x ***"
-	       COLOR_NORMAL "\n\n", data_size, data_size, data_load_addr);
+    printf("\n" COLOR_PROMPT "*** Loaded %d (0x%x) bytes at 0x%08x ***" COLOR_NORMAL "\n\n", data_size, data_size, data_load_addr);
 
-	/* Write data */
-	if (write_data(ft, data_load_addr, data_size) != CMD_RET_SUCCESS)
-		return CMD_RET_FAILURE;
+    /* Write data */
+    if (write_data(ft, data_load_addr, data_size) != CMD_RET_SUCCESS)
+        return CMD_RET_FAILURE;
 
-	if (run) {
-		puts("\n");
+    if (run) {
+        puts("\n");
 
-		if (ft == TYPE_BL) {
-			printf("Rebooting ...\n\n");
-			_machine_restart();
-		} else if (ft == TYPE_FW) {
-			run_command("mtkboardboot", 0);
-		} else if (ft == TYPE_FY) {
-			run_command("mtkboardboot", 0);
-		}
-	}
+        if (ft == TYPE_BL) {
+            printf("Rebooting ...\n\n");
+            _machine_restart();
+        } else if (ft == TYPE_FW) {
+            run_command("mtkboardboot", 0);
+        }
+    }
 
-	return CMD_RET_SUCCESS;
+    return CMD_RET_SUCCESS;
 }
+
 
 U_BOOT_CMD(mtkupgrade, 2, 0, do_mtkupgrade,
 	"MTK firmware/bootloader upgrading utility",
