@@ -764,6 +764,10 @@ static int _write_firmware(void *flash, size_t data_addr, uint32_t data_size,
 	return CMD_RET_SUCCESS;
 }
 
+static int write_factory(void *flash, size_t data_addr, uint32_t data_size)
+{
+	return _write_factory(flash, data_addr, data_size, 0);
+}
 static int _write_factory(void *flash, size_t data_addr, uint32_t data_size) {
     uint64_t part_off, part_size;
     int ret;
@@ -827,12 +831,6 @@ static int write_firmware(void *flash, size_t data_addr, uint32_t data_size)
 {
 	return _write_firmware(flash, data_addr, data_size, 0);
 }
-static int write_factory(void *flash, size_t data_addr, uint32_t data_size)
-{
-	return _write_factory(flash, data_addr, data_size, 0);
-}
-
-
 
 static int write_data(enum file_type ft, size_t addr, uint32_t data_size)
 {
@@ -976,9 +974,9 @@ char *const argv[])
 		ft_name = "Firmware";
 		env_name = "bootfile.firmware";
     } else if (!strcasecmp(part, "factory")) { // New case for factory partition
-        ft = TYPE_FACTORY;
-        ft_name = "Factory";
-        env_name = "bootfile.factory";
+		ft = TYPE_FACTORY;
+		ft_name = "Factory";
+		env_name = "bootfile.factory";
 	} else {
 		printf("Error: invalid type '%s'\n", part);
 		return EINVAL;
