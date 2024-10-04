@@ -764,23 +764,6 @@ static int _write_firmware(void *flash, size_t data_addr, uint32_t data_size,
 	return CMD_RET_SUCCESS;
 }
 
-int write_firmware_failsafe(size_t data_addr, uint32_t data_size)
-{
-	void *flash;
-
-	flash = mtk_board_get_flash_dev();
-
-	if (!flash)
-		return CMD_RET_FAILURE;
-
-	return _write_firmware(flash, data_addr, data_size, 1);
-}
-
-static int write_firmware(void *flash, size_t data_addr, uint32_t data_size)
-{
-	return _write_firmware(flash, data_addr, data_size, 0);
-}
-
 static int _write_factory(void *flash, size_t data_addr, uint32_t data_size) {
     uint64_t part_off, part_size;
     int ret;
@@ -827,6 +810,40 @@ static int _write_factory(void *flash, size_t data_addr, uint32_t data_size) {
 }
 
 
+int write_firmware_failsafe(size_t data_addr, uint32_t data_size)
+{
+	void *flash;
+
+	flash = mtk_board_get_flash_dev();
+
+	if (!flash)
+		return CMD_RET_FAILURE;
+
+	return _write_firmware(flash, data_addr, data_size, 1);
+}
+int write_factory_failsafe(size_t data_addr, uint32_t data_size)
+{
+	void *flash;
+
+	flash = mtk_board_get_flash_dev();
+
+	if (!flash)
+		return CMD_RET_FAILURE;
+
+	return _write_factory(flash, data_addr, data_size, 1);
+}
+
+
+static int write_firmware(void *flash, size_t data_addr, uint32_t data_size)
+{
+	return _write_firmware(flash, data_addr, data_size, 0);
+}
+static int write_factory(void *flash, size_t data_addr, uint32_t data_size)
+{
+	return _write_factory(flash, data_addr, data_size, 0);
+}
+
+
 
 static int write_data(enum file_type ft, size_t addr, uint32_t data_size)
 {
@@ -848,6 +865,12 @@ static int write_data(enum file_type ft, size_t addr, uint32_t data_size)
 
 	case TYPE_FW:
 		if (write_firmware(flash, addr, data_size))
+			return CMD_RET_FAILURE;
+
+		break;
+		
+	case TYPE_FACTORY:
+		if (write_factory(flash, addr, data_size))
 			return CMD_RET_FAILURE;
 
 		break;
