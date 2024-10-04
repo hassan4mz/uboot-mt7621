@@ -868,6 +868,17 @@ int write_firmware_failsafe(size_t data_addr, uint32_t data_size)
 	return _write_firmware(flash, data_addr, data_size, 1);
 }
 
+int write_factory_failsafe(size_t data_addr, uint32_t data_size)
+{
+	void *flash;
+
+	flash = mtk_board_get_flash_dev();
+
+	if (!flash)
+		return CMD_RET_FAILURE;
+
+	return _write_factory(flash, data_addr, data_size, 1);
+}
 
 static int write_firmware(void *flash, size_t data_addr, uint32_t data_size)
 {
