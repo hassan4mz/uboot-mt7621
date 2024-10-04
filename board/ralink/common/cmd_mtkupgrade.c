@@ -766,9 +766,9 @@ static int _write_firmware(void *flash, size_t data_addr, uint32_t data_size,
 
 static int write_factory(void *flash, size_t data_addr, uint32_t data_size)
 {
-	return _write_factory(flash, data_addr, data_size, 0);
+	return write_factory(flash, data_addr, data_size, 0);
 }
-static int _write_factory(void *flash, size_t data_addr, uint32_t data_size) {
+static int write_factory(void *flash, size_t data_addr, uint32_t data_size) {
     uint64_t part_off, part_size;
     int ret;
 
