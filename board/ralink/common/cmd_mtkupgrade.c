@@ -32,7 +32,7 @@ enum file_type {
 	TYPE_BL,
 	TYPE_BL_ADV,
 	TYPE_FW,
-    TYPE_FACTORY // New entry for factory partition
+	TYPE_FACTORY // New entry for factory partition
 };
 
 static void cli_highlight_input(const char *prompt)
@@ -772,7 +772,7 @@ static int _write_factory(void *flash, size_t data_addr, uint32_t data_size,
 	uint64_t part_off, part_size, tmp;
 	int ret;
 
-	if (get_mtd_part_info("firmware", &part_off, &part_size)) {
+	if (get_mtd_part_info("factory", &part_off, &part_size)) {
 		printf(COLOR_ERROR "*** MTD partition 'factory' does not "
 		       "exist! ***" COLOR_NORMAL "\n");
 		return CMD_RET_FAILURE;
