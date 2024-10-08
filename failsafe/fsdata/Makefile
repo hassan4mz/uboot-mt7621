@@ -17,13 +17,21 @@ obj-y += flashing.o
 FILE_flashing.o := flashing.html
 FSPATH_flashing.o := flashing.html
 
+obj-y += upload.o
+FILE_upload2.o := upload2.html
+FSPATH_upload2.o := upload2.html
+
+obj-y += flashing.o
+FILE_flashing2.o := flashing2.html
+FSPATH_flashing2.o := flashing2.html
+
 obj-y += success.o
 FILE_success.o := success.html
 FSPATH_success.o := success.html
 
-obj-y += ART.o
-FILE_ART.o := ART.html
-FSPATH_ART.o := ART.html
+obj-y += art.o
+FILE_art.o := art.html
+FSPATH_art.o := art.html
 
 obj-y += fail.o
 FILE_fail.o := fail.html
