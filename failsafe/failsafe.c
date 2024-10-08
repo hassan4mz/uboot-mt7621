@@ -59,7 +59,7 @@ static void art_handler(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
 {
-	if (status == HTTP_CB_NEW2)
+	if (status == HTTP_CB_NEW)
 		output_plain_file(response, "art.html");
 }
 
@@ -151,7 +151,7 @@ static void upload_handler2(enum httpd_uri_handler_status status,
 
 	static char hexchars[] = "0123456789abcdef";
 
-	if (status == HTTP_CB_NEW2) {
+	if (status == HTTP_CB_NEW) {
 		factory = httpd_request_find_value(request, "factory");
 		if (!fw) {
 			response->info.code = 302;
@@ -226,7 +226,7 @@ static void flashing_handler2(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
 {
-	if (status == HTTP_CB_NEW2)
+	if (status == HTTP_CB_NEW)
 		output_plain_file(response, "flashing2.html");
 }
 
@@ -328,7 +328,7 @@ static void result_handler2(enum httpd_uri_handler_status status,
 	struct flashing_status *st;
 	u32 size;
 
-	if (status == HTTP_CB_NEW2) {
+	if (status == HTTP_CB_NEW) {
 		st = calloc(1, sizeof(*st));
 		if (!st) {
 			response->info.code = 500;
@@ -429,7 +429,7 @@ static void style_handler2(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
 {
-	if (status == HTTP_CB_NEW2) {
+	if (status == HTTP_CB_NEW) {
 		output_plain_file(response, "style.css");
 		response->info.content_type = "text/css";
 	}
@@ -439,7 +439,7 @@ static void not_found_handler2(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
 {
-	if (status == HTTP_CB_NEW2) {
+	if (status == HTTP_CB_NEW) {
 		output_plain_file(response, "404.html");
 		response->info.code = 404;
 	}
