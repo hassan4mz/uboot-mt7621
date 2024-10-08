@@ -371,7 +371,6 @@ int start_web_failsafe(void)
 	httpd_register_uri_handler(inst, "/", &art_handler, NULL);
 	httpd_register_uri_handler(inst, "/cgi-bin/luci", &art_handler, NULL);
 	httpd_register_uri_handler(inst, "/upload", &upload_handler, NULL);
-	httpd_register_uri_handler(inst, "/upload2", &upload_handler2, NULL);
 	httpd_register_uri_handler(inst, "/flashing", &flashing_handler, NULL);
 	httpd_register_uri_handler(inst, "/flashing2", &flashing_handler2, NULL);
 	httpd_register_uri_handler(inst, "/result", &result_handler, NULL);
