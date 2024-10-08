@@ -153,7 +153,7 @@ static void upload_handler2(enum httpd_uri_handler_status status,
 
 	if (status == HTTP_CB_NEW) {
 		factory = httpd_request_find_value(request, "factory");
-		if (!fw) {
+		if (!factory) {
 			response->info.code = 302;
 			response->info.connection_close = 1;
 			response->info.location = "/";
@@ -425,25 +425,7 @@ static void not_found_handler(enum httpd_uri_handler_status status,
 	}
 }
 
-static void style_handler2(enum httpd_uri_handler_status status,
-	struct httpd_request *request,
-	struct httpd_response *response)
-{
-	if (status == HTTP_CB_NEW) {
-		output_plain_file(response, "style.css");
-		response->info.content_type = "text/css";
-	}
-}
 
-static void not_found_handler2(enum httpd_uri_handler_status status,
-	struct httpd_request *request,
-	struct httpd_response *response)
-{
-	if (status == HTTP_CB_NEW) {
-		output_plain_file(response, "404.html");
-		response->info.code = 404;
-	}
-}
 
 int start_web_failsafe(void)
 {
