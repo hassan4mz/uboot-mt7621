@@ -1,96 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MediaTek System Recovery Mode</title>
     <link rel="stylesheet" type="text/css" href="/style.css">
-    <style>
-        /* Basic reset */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
-            text-align: center;
-            padding: 20px;
-        }
-        #banner {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px;
-            font-size: 1.5em;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        #main {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        p {
-            font-size: 1.2em;
-            margin-bottom: 15px;
-        }
-        input[type="file"] {
-            font-size: 1em;
-            padding: 10px;
-            margin-bottom: 20px;
-        }
-        input[type="submit"] {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            font-size: 1em;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        input[type="submit"]:hover {
-            background-color: #45a049;
-        }
-        .file-section {
-            margin-bottom: 20px;
-        }
-    </style>
 </head>
 <body>
     <div id="banner">
         MediaTek U-Boot System Recovery Mode
     </div>
     <div id="main">
-        <div class="file-section">
-            <p>Upload Bootloader File</p>
-            <form action="/upload" method="post" enctype="multipart/form-data">
-                <input type="file" name="bootloader" required />
-                <input type="submit" id="upload" value="Upload Bootloader" />
-            </form>
-        </div>
-
-        <div class="file-section">
-            <p>Upload Factory File</p>
-            <form action="/upload" method="post" enctype="multipart/form-data">
-                <input type="file" name="factory" required />
-                <input type="submit" id="upload" value="Upload Factory" />
-            </form>
-        </div>
-
-        <div class="file-section">
-            <p>Upload New Firmware</p>
-            <form action="/upload" method="post" enctype="multipart/form-data">
-                <input type="file" name="firmware" required />
-                <input type="submit" id="upload" value="Upload Firmware" />
-            </form>
-        </div>
+        <p>Upload new firmware:</p>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <p>
+                <select name="partition" required>
+                    <option value="">Select Partition</option>
+                    <option value="firmware">Firmware</option>
+                    <option value="bootloader">Bootloader</option>
+                    <option value="factory">Factory</option>
+                </select>
+            </p>
+            <p><input type="file" name="firmware" required /></p>
+            <p><input type="submit" id="submit" value="Upload" /></p>
+        </form>
     </div>
 </body>
 </html>
