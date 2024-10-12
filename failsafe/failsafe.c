@@ -77,7 +77,7 @@ static void upload_handler(enum httpd_uri_handler_status status,
         }
 
         /* Check for Bootloader upload */
-        if (strstr(request->uri, "upload_bootloader")) {
+        if (strstr(request->urih, "upload_bootloader")) {
             // Handle bootloader upload
             printf("Uploading bootloader...\n");
             /* Add validation if needed */
@@ -92,7 +92,7 @@ static void upload_handler(enum httpd_uri_handler_status status,
         }
 
         /* Check for ART partition upload */
-        if (strstr(request->uri, "upload_art")) {
+        if (strstr(request->urih, "upload_art")) {
             // Handle ART partition upload
             printf("Uploading ART partition...\n");
             /* Add validation if needed */
