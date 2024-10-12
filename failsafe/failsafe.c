@@ -20,7 +20,6 @@ static size_t upload_size;
 static int upgrade_success;
 
 extern int write_firmware_failsafe(size_t data_addr, uint32_t data_size);
-extern int write_factory_failsafe(size_t data_addr, uint32_t data_size);
 
 static int output_plain_file(struct httpd_response *response,
 	const char *filename)
@@ -55,90 +54,112 @@ static void index_handler(enum httpd_uri_handler_status status,
 	if (status == HTTP_CB_NEW)
 		output_plain_file(response, "index.html");
 }
-static void art_handler(enum httpd_uri_handler_status status,
-	struct httpd_request *request,
-	struct httpd_response *response)
-{
-	if (status == HTTP_CB_NEW)
-		output_plain_file(response, "art.html");
-}
 
 static void upload_handler(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
 {
-	char *buff, *md5_ptr, *size_ptr, size_str[16];
-	u8 md5_sum[16];
-	struct httpd_form_value *fw;
-	const struct fs_desc *file;
-	int i;
+    char *buff, *md5_ptr, *size_ptr, size_str[16];
+    u8 md5_sum[16];
+    struct httpd_form_value *fw;
+    const struct fs_desc *file;
+    int i;
 
-	static char hexchars[] = "0123456789abcdef";
+    static char hexchars[] = "0123456789abcdef";
 
-	if (status == HTTP_CB_NEW) {
-		fw = httpd_request_find_value(request, "firmware");
-		if (!fw) {
-			response->info.code = 302;
-			response->info.connection_close = 1;
-			response->info.location = "/";
-			return;
-		}
+    if (status == HTTP_CB_NEW) {
+        fw = httpd_request_find_value(request, "firmware");
+        if (!fw) {
+            response->info.code = 302;
+            response->info.connection_close = 1;
+            response->info.location = "/";
+            return;
+        }
 
-		/* TODO: add firmware validation here if necessary */
+        /* Check for Bootloader upload */
+        if (strstr(request->uri, "upload_bootloader")) {
+            // Handle bootloader upload
+            printf("Uploading bootloader...\n");
+            /* Add validation if needed */
+            if (write_bootloader_failsafe(fw->data, fw->size) != 0) {
+                printf("Bootloader upload failed\n");
+                output_plain_file(response, "fail.html");
+                return;
+            }
+            printf("Bootloader upload successful\n");
+            output_plain_file(response, "success.html");
+            return;
+        }
 
-		if (output_plain_file(response, "upload.html")) {
-			response->info.code = 500;
-			return;
-		}
+        /* Check for ART partition upload */
+        if (strstr(request->uri, "upload_art")) {
+            // Handle ART partition upload
+            printf("Uploading ART partition...\n");
+            /* Add validation if needed */
+            if (write_art_partition(fw->data, fw->size) != 0) {
+                printf("ART partition upload failed\n");
+                output_plain_file(response, "fail.html");
+                return;
+            }
+            printf("ART partition upload successful\n");
+            output_plain_file(response, "success.html");
+            return;
+        }
 
-		buff = malloc(response->size + 1);
-		if (buff) {
-			memcpy(buff, response->data, response->size);
-			buff[response->size] = 0;
+        /* Handle regular firmware upload */
+        if (output_plain_file(response, "upload.html")) {
+            response->info.code = 500;
+            return;
+        }
 
-			md5_ptr = strstr(buff, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-			size_ptr = strstr(buff, "YYYYYYYYYY");
+        buff = malloc(response->size + 1);
+        if (buff) {
+            memcpy(buff, response->data, response->size);
+            buff[response->size] = 0;
 
-			if (md5_ptr) {
-				md5((u8 *) fw->data, fw->size, md5_sum);
-				for (i = 0; i < 16; i++) {
-					u8 hex;
-					
-					hex = (md5_sum[i] >> 4) & 0xf;
-					md5_ptr[i * 2] = hexchars[hex];
-					hex = md5_sum[i] & 0xf;
-					md5_ptr[i * 2 + 1] = hexchars[hex];
-				}
-			}
+            md5_ptr = strstr(buff, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
+            size_ptr = strstr(buff, "YYYYYYYYYY");
 
-			if (size_ptr) {
-				u32 n;
+            if (md5_ptr) {
+                md5((u8 *)fw->data, fw->size, md5_sum);
+                for (i = 0; i < 16; i++) {
+                    u8 hex;
 
-				n = snprintf(size_str, sizeof(size_str), "%d",
-					fw->size);
-				memset(size_str + n, ' ', sizeof(size_str) - n);
-				memcpy(size_ptr, size_str, 10);
-			}
+                    hex = (md5_sum[i] >> 4) & 0xf;
+                    md5_ptr[i * 2] = hexchars[hex];
+                    hex = md5_sum[i] & 0xf;
+                    md5_ptr[i * 2 + 1] = hexchars[hex];
+                }
+            }
 
-			response->data = buff;
-		}
+            if (size_ptr) {
+                u32 n;
 
-		upload_data_id = upload_id;
-		upload_data = fw->data;
-		upload_size = fw->size;
+                n = snprintf(size_str, sizeof(size_str), "%d", fw->size);
+                memset(size_str + n, ' ', sizeof(size_str) - n);
+                memcpy(size_ptr, size_str, 10);
+            }
 
-		return;
-	}
+            response->data = buff;
+        }
 
-	if (status == HTTP_CB_CLOSED) {
-		file = fs_find_file("upload.html");
+        upload_data_id = upload_id;
+        upload_data = fw->data;
+        upload_size = fw->size;
 
-		if (file) {
-			if (file->data != response->data)
-				free((void *) response->data);
-		}
-	}
+        return;
+    }
+
+    if (status == HTTP_CB_CLOSED) {
+        file = fs_find_file("upload.html");
+
+        if (file) {
+            if (file->data != response->data)
+                free((void *)response->data);
+        }
+    }
 }
+
 
 static void flashing_handler(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
@@ -147,12 +168,24 @@ static void flashing_handler(enum httpd_uri_handler_status status,
 	if (status == HTTP_CB_NEW)
 		output_plain_file(response, "flashing.html");
 }
-static void flashing_handler2(enum httpd_uri_handler_status status,
-	struct httpd_request *request,
-	struct httpd_response *response)
-{
-	if (status == HTTP_CB_NEW)
-		output_plain_file(response, "flashing2.html");
+
+extern int write_bootloader_failsafe(size_t data_addr, uint32_t data_size);
+extern int write_art_partition(size_t data_addr, uint32_t data_size);
+
+int write_bootloader_failsafe(size_t data_addr, uint32_t data_size) {
+    // Your logic to write the bootloader to flash
+    // Example: Write to the bootloader partition
+    nand_erase(...);
+    nand_write(...);
+    return 0;
+}
+
+int write_art_partition(size_t data_addr, uint32_t data_size) {
+    // Your logic to write the ART partition to flash
+    // Example: Write to the ART partition
+    nand_erase(...);
+    nand_write(...);
+    return 0;
 }
 
 struct flashing_status {
@@ -246,7 +279,6 @@ static void result_handler(enum httpd_uri_handler_status status,
 	}
 }
 
-
 static void style_handler(enum httpd_uri_handler_status status,
 	struct httpd_request *request,
 	struct httpd_response *response)
@@ -267,37 +299,38 @@ static void not_found_handler(enum httpd_uri_handler_status status,
 	}
 }
 
-
-
 int start_web_failsafe(void)
 {
-	struct httpd_instance *inst;
+    struct httpd_instance *inst;
 
-	inst = httpd_find_instance(80);
-	if (inst)
-		httpd_free_instance(inst);
+    inst = httpd_find_instance(80);
+    if (inst)
+        httpd_free_instance(inst);
 
-	inst = httpd_create_instance(80);
-	if (!inst) {
-		printf("Error: failed to create HTTP instance on port 80\n");
-		return -1;
-	}
+    inst = httpd_create_instance(80);
+    if (!inst) {
+        printf("Error: failed to create HTTP instance on port 80\n");
+        return -1;
+    }
 
-	httpd_register_uri_handler(inst, "/", &index_handler, NULL);
-	httpd_register_uri_handler(inst, "/cgi-bin/luci", &index_handler, NULL);
-	httpd_register_uri_handler(inst, "/", &art_handler, NULL);
-	httpd_register_uri_handler(inst, "/cgi-bin/luci", &art_handler, NULL);
-	httpd_register_uri_handler(inst, "/upload", &upload_handler, NULL);
-	httpd_register_uri_handler(inst, "/flashing", &flashing_handler, NULL);
-	httpd_register_uri_handler(inst, "/flashing2", &flashing_handler2, NULL);
-	httpd_register_uri_handler(inst, "/result", &result_handler, NULL);
-	httpd_register_uri_handler(inst, "/style.css", &style_handler, NULL);
-	httpd_register_uri_handler(inst, "", &not_found_handler, NULL);
+    httpd_register_uri_handler(inst, "/", &index_handler, NULL);
+    httpd_register_uri_handler(inst, "/cgi-bin/luci", &index_handler, NULL);
+    httpd_register_uri_handler(inst, "/upload", &upload_handler, NULL);
 
-	net_loop(TCP);
+    // Add new routes for bootloader and ART uploads
+    httpd_register_uri_handler(inst, "/upload_bootloader", &upload_handler, NULL);
+    httpd_register_uri_handler(inst, "/upload_art", &upload_handler, NULL);
 
-	return 0;
+    httpd_register_uri_handler(inst, "/flashing", &flashing_handler, NULL);
+    httpd_register_uri_handler(inst, "/result", &result_handler, NULL);
+    httpd_register_uri_handler(inst, "/style.css", &style_handler, NULL);
+    httpd_register_uri_handler(inst, "", &not_found_handler, NULL);
+
+    net_loop(TCP);
+
+    return 0;
 }
+
 
 static int do_httpd(cmd_tbl_t *cmdtp, int flag, int argc,
 	char *const argv[])
