@@ -24,17 +24,19 @@ extern int write_firmware_failsafe(size_t data_addr, uint32_t data_size);
 extern int write_bootloader_failsafe(size_t data_addr, uint32_t data_size);
 extern int write_factory_failsafe(size_t data_addr, uint32_t data_size);
 
-struct flashing_status {
-    char buf[4096];
-    int ret;
-    int body_sent;
-};
+// ... (keep the existing code)
 
 static void upload_handler(enum httpd_uri_handler_status status,
     struct httpd_request *request,
     struct httpd_response *response)
 {
+    char *buff, *md5_ptr, *size_ptr, size_str[16];
+    u8 md5_sum[16];
     struct httpd_form_value *fw, *partition;
+    const struct fs_desc *file;
+    int i;
+
+    static char hexchars[] = "0123456789abcdef";
 
     if (status == HTTP_CB_NEW) {
         fw = httpd_request_find_value(request, "firmware");
@@ -49,48 +51,24 @@ static void upload_handler(enum httpd_uri_handler_status status,
         // Store the selected partition
         selected_partition = strdup(partition->data);
 
-        upload_data_id = upload_id;
-        upload_data = fw->data;
-        upload_size = fw->size;
+        // ... (keep the existing code)
 
-        // Redirect to flashing page
-        response->info.code = 302;
-        response->info.connection_close = 1;
-        response->info.location = "/flashing";
         return;
     }
+
+    // ... (keep the existing code)
 }
 
 static void result_handler(enum httpd_uri_handler_status status,
     struct httpd_request *request,
     struct httpd_response *response)
 {
+    const struct fs_desc *file;
     struct flashing_status *st;
+    u32 size;
 
     if (status == HTTP_CB_NEW) {
-        st = calloc(1, sizeof(*st));
-        if (!st) {
-            response->info.code = 500;
-            return;
-        }
-
-        st->ret = -1;
-
-        response->session_data = st;
-
-        response->status = HTTP_RESP_CUSTOM;
-
-        response->info.http_1_0 = 1;
-        response->info.content_length = -1;
-        response->info.connection_close = 1;
-        response->info.content_type = "text/html";
-        response->info.code = 200;
-
-        response->data = st->buf;
-        response->size = http_make_response_header(&response->info,
-            st->buf, sizeof(st->buf));
-
-        return;
+        // ... (keep the existing code)
     }
 
     if (status == HTTP_CB_RESPONDING) {
@@ -113,18 +91,7 @@ static void result_handler(enum httpd_uri_handler_status status,
             }
         }
 
-        // invalidate upload identifier
-        upload_data_id = rand();
-
-        if (!st->ret)
-            response->data = "Upgrade completed!";
-        else
-            response->data = "Upgrade failed!";
-        response->size = strlen(response->data);
-
-        st->body_sent = 1;
-
-        return;
+        // ... (keep the existing code)
     }
 
     if (status == HTTP_CB_CLOSED) {
@@ -140,10 +107,4 @@ static void result_handler(enum httpd_uri_handler_status status,
     }
 }
 
-// ... (keep the remaining code, including start_web_failsafe and do_httpd functions)
-
-// Add these lines at the end of the file to use the functions and avoid unused function warnings
-void __attribute__((used)) dummy_function(void) {
-    upload_handler(HTTP_CB_NEW, NULL, NULL);
-    result_handler(HTTP_CB_NEW, NULL, NULL);
-}
+// ... (keep the remaining code)
