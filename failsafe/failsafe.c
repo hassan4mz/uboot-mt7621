@@ -24,7 +24,7 @@ extern int write_firmware_failsafe(size_t data_addr, uint32_t data_size);
 
 // Forward declare the required functions
 int write_bootloader_failsafe(const void *data, size_t size);
-int write_art_partition(const void *data, size_t size);
+int write_factory_partition(const void *data, size_t size);
 
 static int output_plain_file(struct httpd_response *response,
     const char *filename)
@@ -265,7 +265,7 @@ int start_web_failsafe(void)
     httpd_register_uri_handler(inst, "/cgi-bin/luci", &index_handler, NULL);
     httpd_register_uri_handler(inst, "/upload", &upload_handler, NULL);
     httpd_register_uri_handler(inst, "/flashing", &flashing_handler, NULL);
-        httpd_register_uri_handler(inst, "/upload_factory", &upload_handler, NULL);
+    httpd_register_uri_handler(inst, "/upload_factory", &upload_handler, NULL);
     httpd_register_uri_handler(inst, "/upload_bootloader", &upload_handler, NULL);
     httpd_register_uri_handler(inst, "/result", &result_handler, NULL);
     httpd_register_uri_handler(inst, "/style.css", &style_handler, NULL);
