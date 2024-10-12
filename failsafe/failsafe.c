@@ -265,10 +265,10 @@ int start_web_failsafe(void)
     httpd_register_uri_handler(inst, "/cgi-bin/luci", &index_handler, NULL);
     httpd_register_uri_handler(inst, "/upload", &upload_handler, NULL);
     httpd_register_uri_handler(inst, "/flashing", &flashing_handler, NULL);
+        httpd_register_uri_handler(inst, "/upload_factory", &upload_handler, NULL);
+    httpd_register_uri_handler(inst, "/upload_bootloader", &upload_handler, NULL);
     httpd_register_uri_handler(inst, "/result", &result_handler, NULL);
     httpd_register_uri_handler(inst, "/style.css", &style_handler, NULL);
-    httpd_register_uri_handler(inst, "/upload_factory", &upload_handler, NULL);
-    httpd_register_uri_handler(inst, "/upload_bootloader", &upload_handler, NULL);
     httpd_register_uri_handler(inst, "", &not_found_handler, NULL);
 
     net_loop(TCP);
