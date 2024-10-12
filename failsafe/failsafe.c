@@ -11,7 +11,7 @@
 #include <net/tcp.h>
 #include <net/httpd.h>
 #include <u-boot/md5.h>
-#include <linux/nand.h>   // Added for NAND operations
+#include <nand.h>   // Added for NAND operations
 
 #include "fs.h"
 
