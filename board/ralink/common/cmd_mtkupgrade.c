@@ -794,7 +794,7 @@ static int _write_factory(void *flash, size_t data_addr, uint32_t data_size,
 
 	if (part_size < data_size) {
 		printf("\n" COLOR_ERROR "*** Error: new factory is larger "
-		       "than mtd partition 'firmware' ***" COLOR_NORMAL "\n");
+		       "than mtd partition 'factory' ***" COLOR_NORMAL "\n");
 		printf(COLOR_ERROR "*** Operation Aborted! ***"
 		       COLOR_NORMAL "\n");
 		return CMD_RET_FAILURE;
@@ -833,7 +833,7 @@ static int _write_factory(void *flash, size_t data_addr, uint32_t data_size,
 
 	printf("OK\n");
 
-	printf("\n" COLOR_PROMPT "*** Firmware upgrade completed! ***"
+	printf("\n" COLOR_PROMPT "*** factory upgrade completed! ***"
 	       COLOR_NORMAL "\n");
 
 #ifdef CONFIG_MTK_DUAL_IMAGE_SUPPORT
@@ -877,7 +877,7 @@ int write_bootloader_failsafe(size_t data_addr, uint32_t data_size)
 	if (!flash)
 		return CMD_RET_FAILURE;
 
-	return _write_factory(flash, data_addr, data_size, 1);
+	return write_bootloader(flash, data_addr, data_size, 1);
 }
 
 int write_factory_failsafe(size_t data_addr, uint32_t data_size)
