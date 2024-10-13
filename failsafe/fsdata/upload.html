@@ -1,23 +1,29 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-	<title>Confirm - MediaTek System Recovery Mode</title>
-	<link rel="stylesheet" type="text/css" href="/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirm - MediaTek System Recovery Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-	<div id="banner">
-		MediaTek U-Boot System Recovery Mode
-	</div>
-	<div id="main">
-		<p>File confirmation:</p>
-		<div id="fileinfo">
-			<p>MD5: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</p>
-			<p>Size: YYYYYYYYYY Bytes</p>
-		</div>
-		<p>If all information above is correct, click [Proceed].</p>
-		<form action="/flashing" method="post" enctype="multipart/form-data">
-			<p><input type="submit" id="submit" value="Proceed" /></p>
-		</form>
-	</div>
+<body class="min-h-screen bg-gray-100 flex flex-col">
+    <header class="bg-blue-600 text-white p-4 text-center">
+        <h1 class="text-2xl font-bold">MediaTek U-Boot System Recovery Mode</h1>
+    </header>
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+            <form action="flashing.html" method="post" enctype="multipart/form-data" class="space-y-4">
+                <h2 class="text-xl font-semibold mb-4">File confirmation</h2>
+                <div class="bg-gray-100 p-4 rounded-md">
+                    <p class="text-sm text-gray-600">MD5: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</p>
+                    <p class="text-sm text-gray-600">Size: YYYYYYYYYY Bytes</p>
+                </div>
+                <p class="text-sm text-gray-600">If all information above is correct, click [Proceed].</p>
+                <button type="submit" class="w-full bg-green-600 text-white p-2 rounded-md hover:bg-green-700 transition-colors">
+                    Proceed
+                </button>
+            </form>
+        </div>
+    </main>
 </body>
 </html>
