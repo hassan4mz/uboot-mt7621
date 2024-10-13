@@ -17,14 +17,6 @@ obj-y += flashing.o
 FILE_flashing.o := flashing.html
 FSPATH_flashing.o := flashing.html
 
-obj-y += upload_factory.o
-FILE_upload_factory.o := upload_factory.html
-FSPATH_upload_factory.o := upload_factory.html
-
-obj-y += upload_bootloader.o
-FILE_upload_bootloader.o := upload_bootloader.html
-FSPATH_upload_bootloader.o := upload_bootloader.html
-
 obj-y += success.o
 FILE_success.o := success.html
 FSPATH_success.o := success.html
