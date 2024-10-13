@@ -1,86 +1,273 @@
-char *buff = NULL;
-char *md5_ptr = NULL;
-char *size_ptr = NULL;
-char size_str[16];
-u8 md5_sum[16];
-struct httpd_form_value *fw = NULL;
-struct httpd_form_value *partition = NULL;
-const struct fs_desc *file = NULL;
-int i;
+/* SPDX-License-Identifier:	GPL-2.0 */
+/*
+ * Copyright (C) 2019 MediaTek Inc. All Rights Reserved.
+ *
+ * Author: Weijie Gao <weijie.gao@mediatek.com>
+ *
+ */
 
-static const char hexchars[] = "0123456789abcdef";
+#include <common.h>
+#include <malloc.h>
+#include <net/tcp.h>
+#include <net/httpd.h>
+#include <u-boot/md5.h>
 
-// Initialize the buffer
-memset(size_str, 0, sizeof(size_str));
+#include "fs.h"
 
-// Find the form values
-fw = httpd_request_find_value(request, "firmware");
-partition = httpd_request_find_value(request, "partition");
+static u32 upload_data_id;
+static const void *upload_data;
+static size_t upload_size;
+static int upgrade_success;
+static char *selected_partition;
 
-if (!fw || !partition) {
-    printf("Error: Missing firmware or partition data\n");
-    response->info.code = 400;
+extern int write_firmware_failsafe(size_t data_addr, uint32_t data_size);
+extern int write_bootloader_failsafe(size_t data_addr, uint32_t data_size);
+extern int write_factory_failsafe(size_t data_addr, uint32_t data_size);
+
+struct flashing_status {
+    char buf[4096];
+    int ret;
+    int body_sent;
+};
+
+static int output_plain_file(struct httpd_response *response,
+    const char *filename)
+{
+    const struct fs_desc *file;
+    int ret = 0;
+
+    file = fs_find_file(filename);
+
+    response->status = HTTP_RESP_STD;
+
+    if (file) {
+        response->data = file->data;
+        response->size = file->size;
+    } else {
+        response->data = "Error: file not found";
+        response->size = strlen(response->data);
+        ret = 1;
+    }
+
+    response->info.code = 200;
     response->info.connection_close = 1;
-    return;
+    response->info.content_type = "text/html";
+
+    return ret;
 }
 
-// Validate partition value
-if (strcmp(partition->data, "firmware") != 0 &&
-    strcmp(partition->data, "bootloader") != 0 &&
-    strcmp(partition->data, "factory") != 0) {
-    printf("Error: Invalid partition selected\n");
-    response->info.code = 400;
-    response->info.connection_close = 1;
-    return;
+static void index_handler(enum httpd_uri_handler_status status,
+    struct httpd_request *request,
+    struct httpd_response *response)
+{
+    if (status == HTTP_CB_NEW)
+        output_plain_file(response, "index.html");
 }
 
-// Calculate MD5 sum
-md5((u8 *)fw->data, fw->size, md5_sum);
+static void upload_handler(enum httpd_uri_handler_status status,
+    struct httpd_request *request,
+    struct httpd_response *response)
+{
+    struct httpd_form_value *fw, *partition;
 
-// Allocate buffer for response
-buff = malloc(response->size + 1);
-if (!buff) {
-    printf("Error: Failed to allocate memory for response buffer\n");
-    response->info.code = 500;
-    return;
-}
+    if (status == HTTP_CB_NEW) {
+        fw = httpd_request_find_value(request, "firmware");
+        partition = httpd_request_find_value(request, "partition");
+        if (!fw || !partition) {
+            response->info.code = 302;
+            response->info.connection_close = 1;
+            response->info.location = "/";
+            return;
+        }
 
-// Copy response data and null-terminate
-memcpy(buff, response->data, response->size);
-buff[response->size] = '\0';
+        // Store the selected partition
+        selected_partition = strdup(partition->data);
 
-// Find MD5 and size placeholders
-md5_ptr = strstr(buff, "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX");
-size_ptr = strstr(buff, "YYYYYYYYYY");
+        if (output_plain_file(response, "upload.html")) {
+            response->info.code = 500;
+            return;
+        }
 
-if (md5_ptr) {
-    for (i = 0; i < 16; i++) {
-        u8 hex = (md5_sum[i] >> 4) & 0xf;
-        md5_ptr[i * 2] = hexchars[hex];
-        hex = md5_sum[i] & 0xf;
-        md5_ptr[i * 2 + 1] = hexchars[hex];
+        upload_data_id = upload_id;
+        upload_data = fw->data;
+        upload_size = fw->size;
+
+        return;
+    }
+
+    if (status == HTTP_CB_CLOSED) {
+        const struct fs_desc *file = fs_find_file("upload.html");
+
+        if (file) {
+            if (file->data != response->data)
+                free((void *) response->data);
+        }
     }
 }
 
-if (size_ptr) {
-    snprintf(size_str, sizeof(size_str), "%-10zu", fw->size);
-    memcpy(size_ptr, size_str, 10);
+static void flashing_handler(enum httpd_uri_handler_status status,
+    struct httpd_request *request,
+    struct httpd_response *response)
+{
+    if (status == HTTP_CB_NEW)
+        output_plain_file(response, "flashing.html");
 }
 
-// Update response data
-response->data = buff;
+static void result_handler(enum httpd_uri_handler_status status,
+    struct httpd_request *request,
+    struct httpd_response *response)
+{
+    const struct fs_desc *file;
+    struct flashing_status *st;
 
-// Store upload information
-upload_data_id = upload_id;
-upload_data = fw->data;
-upload_size = fw->size;
-selected_partition = strdup(partition->data);
+    if (status == HTTP_CB_NEW) {
+        st = calloc(1, sizeof(*st));
+        if (!st) {
+            response->info.code = 500;
+            return;
+        }
 
-if (!selected_partition) {
-    printf("Error: Failed to allocate memory for selected partition\n");
-    free(buff);
-    response->info.code = 500;
-    return;
+        st->ret = -1;
+
+        response->session_data = st;
+
+        response->status = HTTP_RESP_CUSTOM;
+
+        response->info.http_1_0 = 1;
+        response->info.content_length = -1;
+        response->info.connection_close = 1;
+        response->info.content_type = "text/html";
+        response->info.code = 200;
+
+        uint32_t size = http_make_response_header(&response->info,
+            st->buf, sizeof(st->buf));
+
+        response->data = st->buf;
+        response->size = size;
+
+        return;
+    }
+
+    if (status == HTTP_CB_RESPONDING) {
+        st = response->session_data;
+
+        if (st->body_sent) {
+            response->status = HTTP_RESP_NONE;
+            return;
+        }
+
+        if (upload_data_id == upload_id) {
+            if (strcmp(selected_partition, "firmware") == 0) {
+                st->ret = write_firmware_failsafe((size_t) upload_data, upload_size);
+            } else if (strcmp(selected_partition, "bootloader") == 0) {
+                st->ret = write_bootloader_failsafe((size_t) upload_data, upload_size);
+            } else if (strcmp(selected_partition, "factory") == 0) {
+                st->ret = write_factory_failsafe((size_t) upload_data, upload_size);
+            } else {
+                st->ret = -1; // Invalid partition
+            }
+        }
+
+        // invalidate upload identifier
+        upload_data_id = rand();
+
+        if (!st->ret)
+            file = fs_find_file("success.html");
+        else
+            file = fs_find_file("fail.html");
+
+        if (!file) {
+            if (!st->ret)
+                response->data = "Upgrade completed!";
+            else
+                response->data = "Upgrade failed!";
+            response->size = strlen(response->data);
+            return;
+        }
+
+        response->data = file->data;
+        response->size = file->size;
+
+        st->body_sent = 1;
+
+        return;
+    }
+
+    if (status == HTTP_CB_CLOSED) {
+        st = response->session_data;
+
+        upgrade_success = !st->ret;
+
+        free(response->session_data);
+        free(selected_partition);
+        
+        if (upgrade_success)
+            tcp_close_all_conn();
+    }
 }
 
-printf("Firmware upload received for partition: %s\n", selected_partition);
+static void style_handler(enum httpd_uri_handler_status status,
+    struct httpd_request *request,
+    struct httpd_response *response)
+{
+    if (status == HTTP_CB_NEW) {
+        output_plain_file(response, "style.css");
+        response->info.content_type = "text/css";
+    }
+}
+
+static void not_found_handler(enum httpd_uri_handler_status status,
+    struct httpd_request *request,
+    struct httpd_response *response)
+{
+    if (status == HTTP_CB_NEW) {
+        output_plain_file(response, "404.html");
+        response->info.code = 404;
+    }
+}
+
+int start_web_failsafe(void)
+{
+    struct httpd_instance *inst;
+
+    inst = httpd_find_instance(80);
+    if (inst)
+        httpd_free_instance(inst);
+
+    inst = httpd_create_instance(80);
+    if (!inst) {
+        printf("Error: failed to create HTTP instance on port 80\n");
+        return -1;
+    }
+
+    httpd_register_uri_handler(inst, "/", &index_handler, NULL);
+    httpd_register_uri_handler(inst, "/cgi-bin/luci", &index_handler, NULL);
+    httpd_register_uri_handler(inst, "/upload", &upload_handler, NULL);
+    httpd_register_uri_handler(inst, "/flashing", &flashing_handler, NULL);
+    httpd_register_uri_handler(inst, "/result", &result_handler, NULL);
+    httpd_register_uri_handler(inst, "/style.css", &style_handler, NULL);
+    httpd_register_uri_handler(inst, "", &not_found_handler, NULL);
+
+    net_loop(TCP);
+
+    return 0;
+}
+
+static int do_httpd(cmd_tbl_t *cmdtp, int flag, int argc,
+    char *const argv[])
+{
+    int ret;
+
+    printf("\nWeb failsafe UI started\n");
+    
+    ret = start_web_failsafe();
+
+    if (upgrade_success)
+        do_reset(NULL, 0, 0, NULL);
+
+    return ret;
+}
+
+U_BOOT_CMD(httpd, 1, 0, do_httpd,
+    "Start failsafe HTTP server", ""
+);
