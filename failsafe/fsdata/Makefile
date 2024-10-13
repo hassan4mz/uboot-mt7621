@@ -21,9 +21,6 @@ obj-y += success.o
 FILE_success.o := success.html
 FSPATH_success.o := success.html
 
-obj-y += art.o
-FILE_art.o := art.html
-FSPATH_art.o := art.html
 
 obj-y += fail.o
 FILE_fail.o := fail.html
