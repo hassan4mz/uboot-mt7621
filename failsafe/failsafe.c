@@ -159,6 +159,8 @@ static void result_handler(enum httpd_uri_handler_status status,
         if (upload_data_id == upload_id) {
             if (strcmp(selected_partition, "firmware") == 0) {
                 st->ret = write_firmware_failsafe((size_t) upload_data, upload_size);
+            } else if (strcmp(selected_partition, "bootloader") == 0) {
+                st->ret = write_bootloader_failsafe((size_t) upload_data, upload_size);
             } else if (strcmp(selected_partition, "factory") == 0) {
                 st->ret = write_factory_failsafe((size_t) upload_data, upload_size);
             } else {
