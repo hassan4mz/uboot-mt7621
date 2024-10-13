@@ -1,27 +1,50 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MediaTek System Recovery Mode</title>
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
 </head>
-<body>
-    <div id="banner">
-        MediaTek U-Boot System Recovery Mode
-    </div>
-    <div id="main">
-        <p>Upload new firmware:</p>
-        <form action="/upload" method="post" enctype="multipart/form-data">
-            <p>
-                <select name="partition" required>
-                    <option value="">Select Partition</option>
-                    <option value="firmware">Firmware</option>
-                    <option value="bootloader">Bootloader</option>
-                    <option value="factory">Factory</option>
-                </select>
-            </p>
-            <p><input type="file" name="firmware" required /></p>
-            <p><input type="submit" id="submit" value="Upload" /></p>
-        </form>
-    </div>
+<body class="min-h-screen bg-gray-100 flex flex-col">
+    <header class="bg-blue-600 text-white p-4 text-center">
+        <h1 class="text-2xl font-bold">MediaTek U-Boot System Recovery Mode</h1>
+    </header>
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+            <form action="upload.html" method="post" enctype="multipart/form-data" class="space-y-4">
+                <h2 class="text-xl font-semibold mb-4">Upload new firmware</h2>
+                <div>
+                    <label for="partition" class="block text-sm font-medium text-gray-700 mb-1">
+                        Select Partition
+                    </label>
+                    <select id="partition" name="partition" required class="w-full p-2 border border-gray-300 rounded-md">
+                        <option value="">Select Partition</option>
+                        <option value="firmware">Firmware</option>
+                        <option value="bootloader">Bootloader</option>
+                        <option value="factory">Factory</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="firmware" class="block text-sm font-medium text-gray-700 mb-1">
+                        Firmware File
+                    </label>
+                    <input type="file" id="firmware" name="firmware" required class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors">
+                    Upload
+                </button>
+            </form>
+        </div>
+    </main>
 </body>
 </html>
