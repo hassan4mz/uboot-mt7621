@@ -1,32 +1,70 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-	<title>Flashing - MediaTek System Recovery Mode</title>
-	<link rel="stylesheet" type="text/css" href="/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flashing - MediaTek System Recovery Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
 </head>
-<body>
-	<div id="banner">
-		MediaTek U-Boot System Recovery Mode
-	</div>
-	<div id="main">
-		<p>Upgrading is in progressing, please wait ...</p>
-		<p>This page may be in not responding status for a short time.</p>
-	</div>
-	<script type="text/javascript">
-		var interval = window.setInterval(function () {
-			var xmlhttp = new XMLHttpRequest();
+<body class="min-h-screen bg-gray-100 flex flex-col">
+    <header class="bg-blue-600 text-white p-4 text-center">
+        <h1 class="text-2xl font-bold">MediaTek U-Boot System Recovery Mode</h1>
+    </header>
+    <main class="flex-grow flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+            <div id="flashing" class="space-y-4">
+                <h2 class="text-xl font-semibold mb-4">Flashing in progress</h2>
+                <p class="text-sm text-gray-600">Upgrading is in progress, please wait...</p>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                    <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-sm text-gray-600 text-center">0%</p>
+            </div>
+            <div id="complete" class="space-y-4 text-center hidden">
+                <svg class="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <h2 class="text-xl font-semibold">Flashing Complete</h2>
+                <p class="text-sm text-gray-600">The firmware has been successfully updated.</p>
+                <a href="index.html" class="block w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 transition-colors">
+                    Back to Upload
+                </a>
+            </div>
+        </div>
+    </main>
+    <script>
+        function simulateFlashing() {
+            let progress = 0;
+            const progressBar = document.getElementById('progress-bar');
+            const progressText = document.getElementById('progress-text');
+            const flashingDiv = document.getElementById('flashing');
+            const completeDiv = document.getElementById('complete');
 
-			window.clearInterval(interval);
+            const interval = setInterval(() => {
+                progress += 10;
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${progress}%`;
 
-			xmlhttp.timeout = 300000;
-			xmlhttp.open("GET", "/result", true);
-			xmlhttp.send();
-			xmlhttp.onreadystatechange = function () {
-				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-					document.getElementById("main").innerHTML = xmlhttp.responseText;
-				}
-			}
-		}, 1000);
-	</script>
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        flashingDiv.classList.add('hidden');
+                        completeDiv.classList.remove('hidden');
+                    }, 1000);
+                }
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', simulateFlashing);
+    </script>
 </body>
 </html>
