@@ -11,14 +11,8 @@
 #include <net/tcp.h>
 #include <net/httpd.h>
 #include <u-boot/md5.h>
-#include <spi_flash.h>
 
 #include "fs.h"
-
-#define BOOTLOADER_OFFSET 0x0
-#define BOOTLOADER_SIZE (256 * 1024)  // 256KB
-#define FACTORY_OFFSET (256 * 1024)
-#define FACTORY_SIZE (64 * 1024)  // 64KB
 
 static u32 upload_data_id;
 static const void *upload_data;
@@ -26,87 +20,15 @@ static size_t upload_size;
 static int upgrade_success;
 static char *selected_partition;
 
+extern int write_firmware_failsafe(size_t data_addr, uint32_t data_size);
+extern int write_bootloader_failsafe(size_t data_addr, uint32_t data_size);
+extern int write_factory_failsafe(size_t data_addr, uint32_t data_size);
+
 struct flashing_status {
     char buf[4096];
     int ret;
     int body_sent;
 };
-
-int write_firmware_failsafe(size_t data_addr, uint32_t data_size)
-{
-    // Implement firmware writing logic here
-    // This is a placeholder implementation
-    printf("Writing firmware: addr = 0x%zx, size = %u\n", data_addr, data_size);
-    return 0;
-}
-
-int write_bootloader_failsafe(size_t data_addr, uint32_t data_size)
-{
-    struct spi_flash *flash;
-    int ret;
-
-    if (data_size > BOOTLOADER_SIZE) {
-        printf("Bootloader image too large\n");
-        return -1;
-    }
-
-    flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS, CONFIG_SF_DEFAULT_CS,
-                            CONFIG_SF_DEFAULT_SPEED, CONFIG_SF_DEFAULT_MODE);
-    if (!flash) {
-        printf("Failed to probe SPI flash\n");
-        return -1;
-    }
-
-    printf("Erasing bootloader area...\n");
-    ret = spi_flash_erase(flash, BOOTLOADER_OFFSET, BOOTLOADER_SIZE);
-    if (ret) {
-        printf("Bootloader erase failed\n");
-        return -1;
-    }
-
-    printf("Writing bootloader...\n");
-    ret = spi_flash_write(flash, BOOTLOADER_OFFSET, data_size, (void *)data_addr);
-    if (ret) {
-        printf("Bootloader write failed\n");
-        return -1;
-    }
-
-    return 0;
-}
-
-int write_factory_failsafe(size_t data_addr, uint32_t data_size)
-{
-    struct spi_flash *flash;
-    int ret;
-
-    if (data_size > FACTORY_SIZE) {
-        printf("Factory image too large\n");
-        return -1;
-    }
-
-    flash = spi_flash_probe(CONFIG_SF_DEFAULT_BUS, CONFIG_SF_DEFAULT_CS,
-                            CONFIG_SF_DEFAULT_SPEED, CONFIG_SF_DEFAULT_MODE);
-    if (!flash) {
-        printf("Failed to probe SPI flash\n");
-        return -1;
-    }
-
-    printf("Erasing factory area...\n");
-    ret = spi_flash_erase(flash, FACTORY_OFFSET, FACTORY_SIZE);
-    if (ret) {
-        printf("Factory erase failed\n");
-        return -1;
-    }
-
-    printf("Writing factory data...\n");
-    ret = spi_flash_write(flash, FACTORY_OFFSET, data_size, (void *)data_addr);
-    if (ret) {
-        printf("Factory write failed\n");
-        return -1;
-    }
-
-    return 0;
-}
 
 static int output_plain_file(struct httpd_response *response,
     const char *filename)
