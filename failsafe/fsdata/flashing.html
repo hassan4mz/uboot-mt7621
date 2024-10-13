@@ -126,30 +126,21 @@
             </div>
         </div>
     </main>
-    <script>
-        function simulateFlashing() {
-            let progress = 0;
-            const progressBar = document.getElementById('progress');
-            const progressText = document.getElementById('progress-text');
-            const flashingDiv = document.getElementById('flashing');
-            const completeDiv = document.getElementById('complete');
+    <script type="text/javascript">
+		var interval = window.setInterval(function () {
+			var xmlhttp = new XMLHttpRequest();
 
-            const interval = setInterval(() => {
-                progress += 10;
-                progressBar.style.width = `${progress}%`;
-                progressText.textContent = `${progress}%`;
+			window.clearInterval(interval);
 
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        flashingDiv.classList.add('hidden');
-                        completeDiv.classList.remove('hidden');
-                    }, 1000);
-                }
-            }, 1000);
-        }
-
-        document.addEventListener('DOMContentLoaded', simulateFlashing);
-    </script>
+			xmlhttp.timeout = 300000;
+			xmlhttp.open("GET", "/result", true);
+			xmlhttp.send();
+			xmlhttp.onreadystatechange = function () {
+				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+					document.getElementById("main").innerHTML = xmlhttp.responseText;
+				}
+			}
+		}, 1000);
+	</script>
 </body>
 </html>
