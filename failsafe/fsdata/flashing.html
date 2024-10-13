@@ -127,20 +127,41 @@
         </div>
     </main>
     <script type="text/javascript">
-		var interval = window.setInterval(function () {
-			var xmlhttp = new XMLHttpRequest();
+        var progressElement = document.getElementById('progress');
+        var progressText = document.getElementById('progress-text');
+        var completeSection = document.getElementById('complete');
+        var flashingSection = document.getElementById('flashing');
+        var progress = 0;
 
-			window.clearInterval(interval);
+        function updateProgress() {
+            progress += 10; // Increment progress by 10%
+            progressElement.style.width = progress + '%';
+            progressText.textContent = progress + '%';
 
-			xmlhttp.timeout = 300000;
-			xmlhttp.open("GET", "/result", true);
-			xmlhttp.send();
-			xmlhttp.onreadystatechange = function () {
-				if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-					document.getElementById("main").innerHTML = xmlhttp.responseText;
-				}
-			}
-		}, 1000);
-	</script>
+            if (progress < 100) {
+                setTimeout(updateProgress, 500); // Continue updating every 500ms
+            } else {
+                checkFlashingStatus();
+            }
+        }
+
+        function checkFlashingStatus() {
+            var xmlhttp = new XMLHttpRequest();
+            xmlhttp.timeout = 300000; // Timeout after 5 minutes
+            xmlhttp.open("GET", "/result", true);
+            xmlhttp.send();
+
+            xmlhttp.onreadystatechange = function () {
+                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                    // If the response is successful, show the "Flashing Complete" section
+                    flashingSection.classList.add('hidden');
+                    completeSection.classList.remove('hidden');
+                }
+            };
+        }
+
+        // Start updating the progress after a short delay
+        setTimeout(updateProgress, 1000);
+    </script>
 </body>
 </html>
