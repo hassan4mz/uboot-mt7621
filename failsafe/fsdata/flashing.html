@@ -3,59 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flashing - MERCURY KM08-708H System Recovery Mode **Egywrt**</title>
-    <link rel="stylesheet" href="/style.css">
+    <title>Flashing - MediaTek System Recovery Mode</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-color: #f0f4f8;
+            color: #333;
         }
-        #banner {
-            background-color: #2563eb;
+        header {
+            background-color: #1a5f7a;
             color: white;
-            padding: 15px;
+            padding: 1rem;
             text-align: center;
-            font-size: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0;
+        }
+        main {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 24rem;
+            width: 100%;
+        }
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1a5f7a;
+        }
+        .progress-bar {
+            width: 100%;
+            background-color: #e5e7eb;
+            border-radius: 9999px;
+            height: 0.75rem;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+        .progress {
+            width: 0%;
+            height: 100%;
+            background-color: #2563eb;
+            transition: width 0.5s ease-out;
+        }
+        .progress-text {
+            text-align: center;
+            font-size: 0.875rem;
+            color: #4b5563;
+            margin-top: 0.5rem;
             font-weight: bold;
         }
-        #main {
-            max-width: 600px;
-            margin: 50px auto;
-            background: white;
-            padding: 20px;
+        .status-message {
             text-align: center;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-size: 1rem;
+            color: #4b5563;
+            margin-bottom: 1rem;
         }
-        p {
-            font-size: 18px;
-            color: #555;
+        .complete, .error {
+            text-align: center;
+        }
+        .complete svg, .error svg {
+            width: 4rem;
+            height: 4rem;
+            margin: 0 auto 1rem;
+        }
+        .complete svg {
+            color: #10b981;
+        }
+        .error svg {
+            color: #ef4444;
+        }
+        .complete h2 {
+            color: #10b981;
+        }
+        .error h2 {
+            color: #ef4444;
+        }
+        .complete p, .error p {
+            font-size: 0.875rem;
+            color: #4b5563;
+            margin-bottom: 1rem;
+        }
+        .btn {
+            display: inline-block;
+            width: 100%;
+            background-color: #1a5f7a;
+            color: white;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-decoration: none;
+            text-align: center;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #134e63;
+        }
+        .hidden {
+            display: none;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
     </style>
 </head>
 <body>
-    <div id="banner">
-        MERCURY KM08-708H System Recovery Mode **Egywrt**
-    </div>
-    <div id="main">
-        <p>Upgrading is in progress, please wait...</p>
-        <p>This page may not respond for a short period.</p>
-    </div>
+    <header>
+        <h1>MediaTek U-Boot System Recovery Mode</h1>
+    </header>
+    <main>
+        <div class="container">
+            <div id="flashing">
+                <h2>Flashing in Progress</h2>
+                <p class="status-message pulse">Upgrading firmware, please wait...</p>
+                <div class="progress-bar">
+                    <div id="progress" class="progress"></div>
+                </div>
+                <p id="progress-text" class="progress-text">0%</p>
+            </div>
+            <div id="complete" class="complete hidden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                <h2>Flashing Complete</h2>
+                <p>The firmware has been successfully updated.</p>
+                <a href="/" class="btn">Back to Upload</a>
+            </div>
+            <div id="error" class="error hidden">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+                <h2>Flashing Failed</h2>
+                <p id="error-message">An error occurred during the flashing process.</p>
+                <a href="/" class="btn">Back to Upload</a>
+            </div>
+        </div>
+    </main>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(() => {
-                fetch('/result', { method: 'GET', timeout: 300000 })
-                    .then(response => response.text())
-                    .then(data => {
-                        document.getElementById('main').innerHTML = data;
-                    })
-                    .catch(error => {
-                        console.error('Error fetching update:', error);
-                    });
-            }, 1000);
-        });
+        function startFlashing() {
+            const progressBar = document.getElementById('progress');
+            const progressText = document.getElementById('progress-text');
+            const flashingDiv = document.getElementById('flashing');
+            const completeDiv = document.getElementById('complete');
+            const errorDiv = document.getElementById('error');
+            const errorMessage = document.getElementById('error-message');
+
+            function updateProgress(percent) {
+                progressBar.style.width = `${percent}%`;
+                progressText.textContent = `${percent}%`;
+            }
+
+            function showError(message) {
+                flashingDiv.classList.add('hidden');
+                errorDiv.classList.remove('hidden');
+                errorMessage.textContent = message;
+            }
+
+            function showCompletion() {
+                flashingDiv.classList.add('hidden');
+                completeDiv.classList.remove('hidden');
+            }
+
+            fetch('/start_flash', { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Failed to start flashing process');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'started') {
+                        const pollInterval = setInterval(() => {
+                            fetch('/flash_progress')
+                                .then(response => response.json())
+                                .then(progressData => {
+                                    if (progressData.status === 'in_progress') {
+                                        updateProgress(progressData.progress);
+                                    } else if (progressData.status === 'complete') {
+                                        clearInterval(pollInterval);
+                                        showCompletion();
+                                    } else if (progressData.status === 'error') {
+                                        clearInterval(pollInterval);
+                                        showError(progressData.message);
+                                    }
+                                })
+                                .catch(error => {
+                                    clearInterval(pollInterval);
+                                    showError('Failed to fetch progress: ' + error.message);
+                                });
+                        }, 1000);
+                    } else {
+                        showError('Failed to start flashing process');
+                    }
+                })
+                .catch(error => {
+                    showError('Error: ' + error.message);
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', startFlashing);
     </script>
 </body>
 </html>
