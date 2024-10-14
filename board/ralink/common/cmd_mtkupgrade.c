@@ -446,17 +446,11 @@ static int do_write_bootloader(void *flash, size_t stock_stage2_off,
 			printf(COLOR_CAUTION "Upgrading Bootblock is very "
 			       "dangerous. Upgrade it only if you know what "
 			       "you are doing!" COLOR_NORMAL "\n");
-			cli_highlight_input("Upgrade Bootblock? (N/y):");
 
-			if (!confirm_yesno()) {
-				printf("Only second stage block will be "
-				       "upgraded\n");
-				data_addr += stage1_size;
-				data_size -= stage1_size;
-			} else {
-				printf("Whole bootloader will be upgraded\n");
-				stock_stage2_off = 0;
-			}
+			// Automatically upgrade the whole bootloader without prompting
+			printf("Whole bootloader will be upgraded\n");
+			stock_stage2_off = 0;
+
 		} else {
 			data_addr += stage1_size;
 			data_size -= stage1_size;
@@ -520,29 +514,9 @@ static int do_write_bootloader(void *flash, size_t stock_stage2_off,
 
 	printf("OK\n");
 
-#ifndef CONFIG_ENV_IS_NOWHERE
-	printf("Erasing environment from 0x%x to 0x%x, size 0x%x ... ",
-	       CONFIG_ENV_OFFSET, CONFIG_ENV_OFFSET + CONFIG_ENV_SIZE - 1,
-	       CONFIG_ENV_SIZE);
-
-	ret = mtk_board_flash_erase(flash, CONFIG_ENV_OFFSET, CONFIG_ENV_SIZE);
-
-	if (ret)
-		printf("Fail\n");
-	else
-		printf("OK\n");
-#endif
-
-	printf("\n" COLOR_PROMPT "*** Bootloader upgrade completed! ***"
-	       COLOR_NORMAL "\n");
-
-	if (!prompt_countdown("Hit any key to stop reboot", 3)) {
-		printf("\nRebooting ...\n\n");
-		_machine_restart();
-	}
-
 	return CMD_RET_SUCCESS;
 }
+
 
 static int verify_stage2_integrity(const void *data, uint32_t size)
 {
