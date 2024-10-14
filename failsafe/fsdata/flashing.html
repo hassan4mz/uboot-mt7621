@@ -3,153 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flashing - MERCURY KM08-708H System Recovery Mode **Egywrt**</title>
+    <title>Flashing - MediaTek System Recovery Mode</title>
+    <link rel="stylesheet" href="/style.css">
     <style>
         body {
             font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
             margin: 0;
             padding: 0;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            background-color: #f3f4f6;
         }
-        header {
+        #banner {
             background-color: #2563eb;
             color: white;
-            padding: 1rem;
+            padding: 15px;
             text-align: center;
-        }
-        h1 {
-            font-size: 1.5rem;
+            font-size: 24px;
             font-weight: bold;
-            margin: 0;
         }
-        main {
-            flex-grow: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-        .container {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            max-width: 24rem;
-            width: 100%;
-        }
-        h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-        .progress-bar {
-            width: 100%;
-            background-color: #e5e7eb;
-            border-radius: 9999px;
-            height: 0.625rem;
-            overflow: hidden;
-        }
-        .progress {
-            width: 0%;
-            height: 100%;
-            background-color: #2563eb;
-            transition: width 0.5s ease-out;
-        }
-        .progress-text {
+        #main {
+            max-width: 600px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
             text-align: center;
-            font-size: 0.875rem;
-            color: #4b5563;
-            margin-top: 0.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-        .complete {
-            text-align: center;
-        }
-        .complete svg {
-            width: 4rem;
-            height: 4rem;
-            color: #10b981;
-            margin: 0 auto 1rem;
-        }
-        .complete h2 {
-            color: #10b981;
-        }
-        .complete p {
-            font-size: 0.875rem;
-            color: #4b5563;
-            margin-bottom: 1rem;
-        }
-        .complete a {
-            display: inline-block;
-            width: 100%;
-            background-color: #2563eb;
-            color: white;
-            padding: 0.5rem;
-            border: none;
-            border-radius: 0.25rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            text-decoration: none;
-            text-align: center;
-        }
-        .complete a:hover {
-            background-color: #1d4ed8;
-        }
-        .hidden {
-            display: none;
+        p {
+            font-size: 18px;
+            color: #555;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>MERCURY KM08-708H System Recovery Mode **Egywrt**</h1>
-    </header>
-    <main>
-        <div class="container">
-            <div id="flashing">
-                <h2>Flashing in progress</h2>
-                <p>Upgrading is in progress, please wait...</p>
-                <div class="progress-bar">
-                    <div id="progress" class="progress"></div>
-                </div>
-                <p id="progress-text" class="progress-text">0%</p>
-            </div>
-            <div id="complete" class="complete hidden">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-                <h2>Flashing Complete</h2>
-                <p>The firmware has been successfully updated.</p>
-                <a href="index.html">Back to Upload</a>
-            </div>
-        </div>
-    </main>
+    <div id="banner">
+        MERCURY KM08-708H System Recovery Mode **Egywrt**
+    </div>
+    <div id="main">
+        <p>Upgrading is in progress, please wait...</p>
+        <p>This page may not respond for a short period.</p>
+    </div>
     <script>
-        function simulateFlashing() {
-            let progress = 0;
-            const progressBar = document.getElementById('progress');
-            const progressText = document.getElementById('progress-text');
-            const flashingDiv = document.getElementById('flashing');
-            const completeDiv = document.getElementById('complete');
-
-            const interval = setInterval(() => {
-                progress += 10;
-                progressBar.style.width = `${progress}%`;
-                progressText.textContent = `${progress}%`;
-
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    setTimeout(() => {
-                        flashingDiv.classList.add('hidden');
-                        completeDiv.classList.remove('hidden');
-                    }, 1000);
-                }
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                fetch('/result', { method: 'GET', timeout: 300000 })
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById('main').innerHTML = data;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching update:', error);
+                    });
             }, 1000);
-        }
-
-        document.addEventListener('DOMContentLoaded', simulateFlashing);
+        });
     </script>
 </body>
 </html>
